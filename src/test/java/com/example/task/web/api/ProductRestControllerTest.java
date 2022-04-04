@@ -7,6 +7,8 @@ import com.example.task.model.entity.CategoryEntity;
 import com.example.task.model.entity.ProductEntity;
 import com.example.task.repository.CategoryRepository;
 import com.example.task.repository.ProductRepository;
+import com.example.task.service.impl.CategoryServiceImpl;
+import com.example.task.service.impl.ProductServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -92,6 +94,25 @@ class ProductRestControllerTest {
     }
 
     @Test
+    void testAddProductReturnErrorsOnValidationFailure() throws Exception {
+        ProductBindingModel product = new ProductBindingModel()
+                .setCategoryId(6L)
+                .setDescription("a")
+                .setName("ab")
+                .setPrice(BigDecimal.valueOf(-99.19));
+
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/api/product").content(new ObjectMapper().writeValueAsString(product))
+                        .contentType(MediaType.APPLICATION_JSON)).
+                andExpect(status().isBadRequest()).
+                andDo(print()).
+                andExpect(jsonPath("$.fieldErrors.name").value("Required minimal product name length is 3 characters.")).
+                andExpect(jsonPath("$.fieldErrors.categoryId").value("Category not exists")).
+                andExpect(jsonPath("$.fieldErrors.description").value("Description text length required minimum 10 maximum 12000")).
+                andExpect(jsonPath("$.fieldErrors.price").value("Price cannot be 0 or negative."));
+
+    }
+
+    @Test
     void testGetProductReturnsCorrectProduct() throws Exception {
         this.mockMvc.perform(MockMvcRequestBuilders.get("/api/product/1")).
                 andExpect(status().isOk()).
@@ -173,6 +194,21 @@ class ProductRestControllerTest {
     }
 
     @Test
-    void deleteProduct() {
+    void testDeleteProductRemovesProduct() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/product/1")).
+                andExpect(status().isOk()).
+                andExpect(jsonPath("$").value("Product with id 1 deleted."));
+
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/api/product/1")).
+                andExpect(status().isNotFound()).
+                andExpect(jsonPath("$").value(String.format(ProductServiceImpl.PRODUCT_NOT_FOUND_MESSAGE,1)));
+    }
+
+    @Test
+    void testDeleteProductReturnErrorOnInvalidProductId() throws Exception {
+        this.mockMvc.perform(MockMvcRequestBuilders.delete("/api/product/12")).
+                andExpect(status().isNotFound()).
+                andExpect(jsonPath("$").value("Product with id 12 not exist."));
+
     }
 }
