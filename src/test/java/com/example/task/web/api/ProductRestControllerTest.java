@@ -2,6 +2,7 @@ package com.example.task.web.api;
 
 import com.example.task.model.binding.CategoryBindingModel;
 import com.example.task.model.binding.ProductBindingModel;
+import com.example.task.model.binding.ProductChangeBindingModel;
 import com.example.task.model.entity.CategoryEntity;
 import com.example.task.model.entity.ProductEntity;
 import com.example.task.repository.CategoryRepository;
@@ -108,7 +109,67 @@ class ProductRestControllerTest {
 
 
     @Test
-    void updateProduct() {
+    void testUpdateProductForCorrectlyUpdateProduct() throws Exception {
+        ProductChangeBindingModel product = new ProductChangeBindingModel()
+                .setId(1L)
+                .setCategoryId(2L)
+                .setDescription("updated description")
+                .setName("updated name")
+                .setPrice(BigDecimal.valueOf(99.19));
+
+        this.mockMvc.perform(MockMvcRequestBuilders.put("/api/product").content(new ObjectMapper().writeValueAsString(product))
+                        .contentType(MediaType.APPLICATION_JSON)).
+                andExpect(status().isOk()).
+                andExpect(jsonPath("$.name").value("updated name")).
+                andExpect(jsonPath("$.id").value("1")).
+                andExpect(jsonPath("$.description").value("updated description")).
+                andExpect(jsonPath("$.categoryId").value("2"));
+
+        this.mockMvc.perform(MockMvcRequestBuilders.get("/api/category/2")).
+                andExpect(status().isOk()).
+                andExpect(jsonPath("$.name").value("test2"))
+                .andExpect(jsonPath("$.products", hasSize(1)))
+                .andExpect(jsonPath("$.products[0].name").value("updated name"));
+
+    }
+
+
+    @Test
+    void testUpdateProductReturnErrorsOnValidationFailure() throws Exception {
+        ProductChangeBindingModel product = new ProductChangeBindingModel()
+                .setId(null)
+                .setCategoryId(6L)
+                .setDescription("a")
+                .setName("ab")
+                .setPrice(BigDecimal.valueOf(-99.19));
+
+        this.mockMvc.perform(MockMvcRequestBuilders.put("/api/product").content(new ObjectMapper().writeValueAsString(product))
+                        .contentType(MediaType.APPLICATION_JSON)).
+                andExpect(status().isBadRequest()).
+                andDo(print()).
+                andExpect(jsonPath("$.fieldErrors.id").value("Product id is required.")).
+                andExpect(jsonPath("$.fieldErrors.name").value("Required minimal product name length is 3 characters.")).
+                andExpect(jsonPath("$.fieldErrors.categoryId").value("Category not exists")).
+                andExpect(jsonPath("$.fieldErrors.description").value("Description text length required minimum 10 maximum 12000")).
+                andExpect(jsonPath("$.fieldErrors.price").value("Price cannot be 0 or negative."));
+
+    }
+
+    @Test
+    void testUpdateProductReturnErrorOnInvalidProductId() throws Exception {
+        ProductChangeBindingModel product = new ProductChangeBindingModel()
+                .setId(12L)
+                .setCategoryId(2L)
+                .setDescription("product description")
+                .setName("new name")
+                .setPrice(BigDecimal.valueOf(99.19));
+
+        this.mockMvc.perform(MockMvcRequestBuilders.put("/api/product").content(new ObjectMapper().writeValueAsString(product))
+                        .contentType(MediaType.APPLICATION_JSON)).
+                andExpect(status().isNotFound()).
+                andDo(print()).
+                andExpect(jsonPath("$").value("Product with id 12 not exist."));
+
     }
 
     @Test

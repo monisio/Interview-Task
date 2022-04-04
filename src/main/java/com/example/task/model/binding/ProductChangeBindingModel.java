@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 
 public class ProductChangeBindingModel {
 
-    @NotNull
+    @NotNull(message = "Product id is required.")
     private Long id;
 
     @NotBlank(message = "Name cannot be empty or blank.")
