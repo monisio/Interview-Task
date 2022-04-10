@@ -7,6 +7,7 @@ import com.example.task.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -39,9 +40,11 @@ public class CategoryRestController {
 
 
         CategoryViewModel createdCategory = this.categoryService.addCategory(newCategory);
+        URI newCategoryUri = URI.create(ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .path(String.format("/api/category/%d", createdCategory.getId()))
+                .toUriString());
 
-
-        URI newCategoryUri = URI.create(String.format("/api/category/get/%s", createdCategory.getId()));
 
         return ResponseEntity.created(newCategoryUri).body(createdCategory);
 

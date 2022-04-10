@@ -6,6 +6,7 @@ import com.example.task.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -37,9 +38,11 @@ public class ProductRestController {
     ) {
 
         ProductViewModel createdProduct = this.productService.addProduct(newProduct);
+        URI newProductUri = URI.create(ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .path(String.format("api/product/%d", createdProduct.getId()))
+                .toUriString());
 
-
-        URI newProductUri = URI.create(String.format("/api/product/%d", createdProduct.getId()));
 
         return ResponseEntity.created(newProductUri).body(createdProduct);
 
