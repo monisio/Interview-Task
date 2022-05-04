@@ -4,7 +4,7 @@ package com.example.task.util;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import org.springframework.security.core.GrantedAuthority;
-
+import org.springframework.stereotype.Component;
 
 
 import java.util.Collection;
@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.stream.Collectors;
 
 
-
+@Component
 public class TokenUtilities {
 
     private final Algorithm algorithm;

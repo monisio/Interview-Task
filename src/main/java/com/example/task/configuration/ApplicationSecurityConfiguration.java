@@ -3,8 +3,10 @@ package com.example.task.configuration;
 
 import com.example.task.filter.CustomAuthenticationFilter;
 import com.example.task.filter.CustomAuthorizationFilter;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -21,11 +23,14 @@ public class ApplicationSecurityConfiguration extends WebSecurityConfigurerAdapt
 
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
+    private final CustomAuthenticationFilter customAuthenticationFilter;
+    private final CustomAuthorizationFilter customAuthorizationFilter;
 
-
-    public ApplicationSecurityConfiguration(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+    public ApplicationSecurityConfiguration(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder, CustomAuthenticationFilter customAuthenticationFilter, CustomAuthorizationFilter customAuthorizationFilter) {
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
+        this.customAuthenticationFilter = customAuthenticationFilter;
+        this.customAuthorizationFilter = customAuthorizationFilter;
     }
 
 
@@ -34,6 +39,8 @@ public class ApplicationSecurityConfiguration extends WebSecurityConfigurerAdapt
         auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
     }
 
+
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         //todo: configure security
@@ -41,8 +48,7 @@ public class ApplicationSecurityConfiguration extends WebSecurityConfigurerAdapt
         //csrf disabling is required
 
         //set custom login ulr location
-        CustomAuthenticationFilter filter = new CustomAuthenticationFilter(super.authenticationManagerBean());
-        filter.setFilterProcessesUrl("/api/login");
+        customAuthenticationFilter.setFilterProcessesUrl("/api/login");
 
         http.csrf().disable();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
@@ -50,10 +56,15 @@ public class ApplicationSecurityConfiguration extends WebSecurityConfigurerAdapt
         http.authorizeRequests().antMatchers(HttpMethod.GET,"api/**").hasAnyAuthority("ROLE_USER");
         http.authorizeRequests().antMatchers(HttpMethod.POST,"api/**").hasAnyAuthority("ROLE_ADMIN");
         http.authorizeRequests().anyRequest().authenticated();
-        http.addFilter(filter);
+        http.addFilter(customAuthenticationFilter);
         //adding filter before other filters
-        http.addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(customAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
     }
 
+    @Override
+    @Bean
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
 
 }

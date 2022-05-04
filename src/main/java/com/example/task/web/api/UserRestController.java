@@ -35,7 +35,7 @@ public class UserRestController {
     // refresh token endpoint
     @GetMapping("/token/refresh")
     public void refreshToken(HttpServletRequest request, HttpServletResponse response){
-
+        //todo add refresh token logic
     }
 
 }
